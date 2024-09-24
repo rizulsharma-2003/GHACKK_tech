@@ -1,0 +1,38 @@
+name: QuadBTech
+description: "A new Flutter project."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webview_flutter:
+  http: ^1.2.2
+  html: ^0.15.4
+  cupertino_icons: ^1.0.8
+  carousel_slider: ^5.0.0
+
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+
+  # Specify your assets here
+  assets:
+    #- assets/images/no_results.png  # Example asset image
+    - assets/images/QuadB.png        # Example logo image
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/QuadB.png"
