@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:html/parser.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'favouriteScreen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -12,16 +15,28 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List movies = [];
+  List<String> _favoriteMovies =[];
   PageController _pageController = PageController(viewportFraction: 0.85);
 
   @override
   void initState() {
     super.initState();
     fetchMovies();
+    _loadFavorites();
     Timer.periodic(Duration(seconds: 2), (timer) {
       _animateToNextPage();
     });
   }
+
+  Future<void> _loadFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      // Get the keys where the value is true (favorite movies)
+      _favoriteMovies = prefs.getKeys().where((key) => prefs.getBool(key) == true).toList();
+    });
+  }
+
+
 
   Future<void> fetchMovies() async {
     final response = await http.get(Uri.parse('https://api.tvmaze.com/search/shows?q=all'));
@@ -91,6 +106,50 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              child: Text('Menu', style: TextStyle(fontSize: 24)),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+              ),
+            ),
+            ListTile(
+              title: Text('Favorites'),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 400, // Set the desired height for the container
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 5,
+                          blurRadius: 7,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: FavoritesListWidget(), // Embedding the favorites list inside the container
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
       body: Padding(

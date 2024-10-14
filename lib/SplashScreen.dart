@@ -36,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 border: Border.all(color: Colors.white, width: 2.0),
                 borderRadius: BorderRadius.circular(12.0),
               ),
-              child: Image.asset('assets/images/QuadB.png')
+              child: Image.asset('assets/images/GHACKK.jpg')
           ),
         ),
       ),

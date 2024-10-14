@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:html/parser.dart';
 
 class DetailsScreen extends StatefulWidget {
@@ -8,10 +10,80 @@ class DetailsScreen extends StatefulWidget {
 
 class _DetailsScreenState extends State<DetailsScreen> {
   bool _isExpanded = false;
+  bool _isFavorite = false;
+  double _currentRating = 0.0;
 
   String stripHtmlTags(String htmlString) {
     final document = parse(htmlString);
     return document.body?.text ?? '';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Load favorite status and rating from SharedPreferences
+    _loadFavoriteStatus();
+    _loadMovieRating();
+  }
+
+  Future<void> _loadFavoriteStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final movie = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    final movieTitle = movie['name'] ?? 'Movie Title';
+
+    setState(() {
+      _isFavorite = prefs.getBool(movieTitle) ?? false;
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    final movie = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    final movieTitle = movie['name'] ?? 'Movie Title';
+
+    setState(() {
+      _isFavorite = !_isFavorite;
+    });
+
+    // Retrieve the list of favorite movies
+    List<String> favoriteMovies = prefs.getStringList('favorite_movies') ?? [];
+
+    if (_isFavorite) {
+      await prefs.setBool(movieTitle, true);
+      // Add the movie to the list of favorites if it's not already there
+      if (!favoriteMovies.contains(movieTitle)) {
+        favoriteMovies.add(movieTitle);
+      }
+    } else {
+      await prefs.remove(movieTitle);
+      // Remove the movie from the list of favorites
+      favoriteMovies.remove(movieTitle);
+    }
+
+    // Save the updated list of favorites
+    await prefs.setStringList('favorite_movies', favoriteMovies);
+  }
+
+  Future<void> _loadMovieRating() async {
+    final prefs = await SharedPreferences.getInstance();
+    final movie = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    final movieTitle = movie['name'] ?? 'Movie Title';
+
+    setState(() {
+      _currentRating = prefs.getDouble('${movieTitle}_rating') ?? 0.0;
+    });
+  }
+
+  Future<void> _saveMovieRating(double rating) async {
+    final prefs = await SharedPreferences.getInstance();
+    final movie = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    final movieTitle = movie['name'] ?? 'Movie Title';
+
+    setState(() {
+      _currentRating = rating;
+    });
+
+    await prefs.setDouble('${movieTitle}_rating', rating);
   }
 
   @override
@@ -43,6 +115,15 @@ class _DetailsScreenState extends State<DetailsScreen> {
             title: Text(movie['name'] ?? 'Movie Details'),
             backgroundColor: Colors.transparent,
             elevation: 0,
+            actions: [
+              IconButton(
+                icon: Icon(
+                  _isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: _isFavorite ? Colors.red : Colors.white,
+                ),
+                onPressed: _toggleFavorite,
+              ),
+            ],
           ),
         ),
       ),
@@ -63,7 +144,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 Stack(
                   children: [
                     Padding(
@@ -93,7 +173,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
                         ),
                       ),
                     ),
-
                     Positioned(
                       bottom: 10,
                       left: 20,
@@ -116,20 +195,17 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     ),
                   ],
                 ),
-
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Genres (optional)
                       if (movie['genres'] != null && movie['genres'].isNotEmpty)
                         Text(
                           'Genres: ${movie['genres'].join(', ')}',
                           style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.grey),
                         ),
                       SizedBox(height: 10),
-
                       Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
@@ -149,13 +225,11 @@ class _DetailsScreenState extends State<DetailsScreen> {
                         ],
                       ),
                       SizedBox(height: 20),
-
                       Text(
                         'Summary',
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                       ),
                       SizedBox(height: 8),
-
                       AnimatedCrossFade(
                         firstChild: Text(
                           cleanedSummary.length > 150
@@ -173,7 +247,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
                         duration: Duration(milliseconds: 300),
                       ),
                       SizedBox(height: 8),
-
                       GestureDetector(
                         onTap: () {
                           setState(() {
@@ -190,7 +263,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
                         ),
                       ),
                       SizedBox(height: 20),
-
                       if (movie['network'] != null)
                         Text(
                           'Network: ${movie['network']['name']}',
@@ -204,6 +276,39 @@ class _DetailsScreenState extends State<DetailsScreen> {
           ),
         ),
       ),
+      floatingActionButton: Container(
+        width: double.infinity,
+        height: 70,
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: FloatingActionButton.extended(
+          onPressed: () {},
+          label: Column(
+            children: [
+              Text(
+                'Rate this movie',
+                style: TextStyle(color: Colors.white),
+              ),
+              SizedBox(height: 8),
+              RatingBar.builder(
+                initialRating: _currentRating,
+                minRating: 1,
+                direction: Axis.horizontal,
+                allowHalfRating: true,
+                itemCount: 5,
+                itemBuilder: (context, _) => Icon(
+                  Icons.star,
+                  color: Colors.amber,
+                ),
+                onRatingUpdate: (rating) {
+                  _saveMovieRating(rating);
+                },
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

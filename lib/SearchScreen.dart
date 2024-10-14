@@ -90,7 +90,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                     child: Image.asset(
-                      'assets/images/QuadB.png',
+                      'assets/images/GHACKK.jpg',
                       height: 150,
                       width: 150,
                     ),
